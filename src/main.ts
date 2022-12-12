@@ -12,5 +12,6 @@ async function bootstrap() {
     },
   });
   await app.listen();
+  console.log('Microservice listening POST_SERVICE')
 }
 bootstrap();

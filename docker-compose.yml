@@ -1,34 +1,58 @@
-version: '3.9'
-
+version: '3.8'
 services:
   posts:
-    build:
-      dockerfile: Dockerfile
-      context: .
-      # Only will build development stage from our dockerfile
-      target: development
+    build: .
     env_file:
-        - .env
-    volumes:
-      - .:/usr/src/services/post
-    # Run in dev Mode: npm run start:dev
-    command: npm run start:dev
-    ports:
-      - 3001:3001
+      - .env
     depends_on:
+      # Our app does not work without our database
+      # so this ensures our database is loaded first
       - postgres
+    ports:
+      - "3001:3001"
+    volumes:
+      - ./:/usr/src/app/
+      # node_modules workaround for volumes
+    command: npm run start:dev
+    networks:
+      - mynetwork
 
+  # This is the configuration for our PostgreSQL database container
+  # Note the `postgres` name is important, in out Node app when we refer
+  # to  `host: "postgres"` that value is mapped on the network to the 
+  # address of this container.
   postgres:
-    image: postgres
+    image: postgres:14.1-alpine
     restart: always
     environment:
       POSTGRES_DB: ${POSTGRES_DB}
       POSTGRES_USER: ${POSTGRES_USER}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
     ports: 
-      - '5432:5432'
+      # Standard port for PostgreSQL databases
+      - "5432:5432"
     volumes:
-      - posts:/var/lib/postgresql/data
+      # When the PostgresSQL container is started it will run any scripts
+      # provided in the `docker-entrypoint-initdb.d` directory, this connects
+      # our seed file to that directory so that it gets run
+      - ./db/database-seed.sql:/docker-entrypoint-initdb.d/database-seed.sql
+      - ./db/data:/var/lib/postgresql/data
+    networks:
+      - mynetwork
 
-volumes:
-  posts:
+  # PostgreSQL pgAdmin panel accessible at http://localhost:16543/
+  pgadmin-compose:
+    image: dpage/pgadmin4
+    environment:
+      PGADMIN_DEFAULT_EMAIL: ${PGADMIN_DEFAULT_EMAIL}
+      PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_DEFAULT_PASSWORD}
+    ports:
+      - "16543:80"
+    depends_on:
+      - postgres
+    networks:
+      - mynetwork
+
+networks:
+  mynetwork:
+    name: mynetwork
