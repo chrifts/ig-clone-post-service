@@ -1,18 +1,20 @@
 import { Controller, Get } from '@nestjs/common';
-import { EventPattern } from '@nestjs/microservices';
+import { EventPattern, MessagePattern } from '@nestjs/microservices';
 import { AppService } from './app.service';
 
 @Controller()
 export class AppController {
-  constructor(private readonly appService: AppService) {}
+  constructor(private readonly appService: AppService) { }
 
-  @Get('/')
-  getHello(): string {
-    return this.appService.getHello();
+  @EventPattern('check_health')
+  async handleTestEvent(data: Record<string, unknown>) {
+    console.log('event check_health reached')
+    console.log(data)
   }
 
-  @EventPattern('user_created')
-  async handleUserCreated(data: Record<string, unknown>) {
-    console.log('event user_created reached')
+  @MessagePattern({ cmd: 'greeting' })
+  getGreetingMessage(name: string): string {
+    console.log('Reached greeting')
+    return `Hello ${name}`;
   }
 }

@@ -7,11 +7,11 @@ import { AppService } from './app.service';
   imports: [
     ClientsModule.register([
       {
-        name: 'POST_SERVICE',
+        name: process.env.SERVICE_NAME,
         transport: Transport.REDIS,
         options: {
-          host: 'redis',
-          port: 6379,
+          host: process.env.REDIS_HOST,
+          port: parseInt(process.env.REDIS_PORT),
         }
       },
     ]),
